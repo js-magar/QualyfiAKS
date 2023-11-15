@@ -1,10 +1,24 @@
 var RGLocation = resourceGroup().location
-var aksClusterName = 'aksclusterjash'
 var acrName = 'aksacrjash'
 var acrSKU = 'Basic'
-var AppgwSubnetName = 'AppgwSubnetName'
 var linuxAdminUsername = 'username'
 var linuxAdminSSH ='ssh'
+
+var vnetAddressPrefix = '10.0'
+var virtualNetworkName = 'virtualNetwork'
+var appGatewaySubnetAddressPrefix = '1'
+var appGatewaySubnetName = 'AppgwSubnet'
+var appGatewayPIPName = 'pip-appGateway-jash-${RGLocation}-001'
+var appGatewayName = 'appGateway-jash-${RGLocation}-001'
+
+var aksSubnetAddressPrefix = '2'
+var aksClusterName = 'aksclusterjash'
+var aksSubnetName = 'aksClusterSubnet'
+
+
+var bastionSubnetAddressPrefix = '3'
+var bastionClusterName = 'bastion-jash-${RGLocation}-001'
+var bastionSubnetName = 'bastionSubnet'
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name:'LAWAcrResource'
@@ -15,15 +29,49 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
     }
   }
 }
-/*
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
+  name: virtualNetworkName
+  location: RGLocation
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        '${vnetAddressPrefix}.0.0/16'
+      ]
+    }
+    subnets: [
+      {
+        name: appGatewaySubnetName
+        properties: {
+          addressPrefix: '${vnetAddressPrefix}.${appGatewaySubnetAddressPrefix}.0/24'
+        }
+      }
+      {
+        name: aksSubnetName
+        properties: {
+          addressPrefix: '${vnetAddressPrefix}.${aksSubnetAddressPrefix}.0/24'
+        }
+      }
+      {
+        name: bastionSubnetName
+        properties: {
+          addressPrefix: '${vnetAddressPrefix}.${bastionSubnetAddressPrefix}.0/24'
+        }
+      }
+    ]
+  }
+}
 module appGateway 'modules/app.bicep'={
   name:'appGatewayDeployment'
   params:{
-    appGatewaySubnetName :AppgwSubnetName
-    vnetAddressPrefix:'10.0'
+    appGatewaySubnetName : appGatewaySubnetName
+    appGatewayPIPName:appGatewayPIPName
+    appGatewayName:appGatewayName
+    virtualNetworkName:virtualNetworkName
   }
+  dependsOn:[
+    virtualNetwork
+  ]
 }
-*/
 resource acrResource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   location: RGLocation
   name:acrName
@@ -59,7 +107,7 @@ resource acrResource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
 }
 
   
-  resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
     scope: acrResource
     name: 'default'
     properties: {
@@ -80,12 +128,12 @@ resource acrResource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
           category: 'ContainerRegistryLoginEvents'
           enabled: true
         }
-      ]
-    }
+    ]
   }
+}
   
-  resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-01' = {
-    name: 'aksclusterjash'
+resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-01' = {
+    name: aksClusterName
     location: RGLocation
     sku: {
       name: 'Base'
@@ -112,7 +160,7 @@ resource acrResource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
           mode: 'System'
         }
         {
-          name: 'applicationpool'
+          name: 'apppool'
           count: 1
           vmSize: 'Standard_DS2_v2' 
           maxPods:30
@@ -141,26 +189,7 @@ resource acrResource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
       networkProfile: {
         loadBalancerSku: 'Standard'
         outboundType: 'loadBalancer'
-      }
     }
   }
-  /*
-  module buildDaprImage 'br/public:deployment-scripts/build-acr:2.0.2' = {
-    name: 'buildAcrImage-linux'
-    params: {
-      AcrName: acrName
-      location: RGLocation
-      gitRepositoryUrl:  ' https://github.com/Azure-Samples/azure-voting-app-redis.git'
-      buildWorkingDirectory:  'azure-vote'
-      imageName: 'mcr.microsoft.com/azuredocs/azure-vote-front'
-    }
-    dependsOn:[
-      acrResource
-    ]
-  }
-  */
-/*{"code":"DeploymentScriptError","message":"WARNING: Sending context to registry: aksacrjash..."},
-  {"code":"DeploymentScriptError","message":"WARNING: Queued a build with ID: ca2"},
-  {"code":"DeploymentScriptError","message":"WARNING: Waiting for an agent..."},{"code":"DeploymentScriptError","message":"ERROR: Run failed"
-*/
+}
 
