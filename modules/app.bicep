@@ -22,9 +22,7 @@ var wafPolicyRuleSetVersion = '3.1'
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {
   name: virtualNetworkName
 }
-
 resource AppGatewaySubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existing = {name: appGatewaySubnetName,parent: virtualNetwork}
-
 resource appGatewayPIP 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
   name: appGatewayPIPName
   location: RGLocation

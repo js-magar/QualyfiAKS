@@ -18,7 +18,7 @@ var aksSubnetName = 'aksClusterSubnet'
 
 var bastionSubnetAddressPrefix = '3'
 var bastionClusterName = 'bastion-jash-${RGLocation}-001'
-var bastionSubnetName = 'bastionSubnet'
+var bastionSubnetName = 'AzureBastionSubnet'
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name:'LAWAcrResource'
