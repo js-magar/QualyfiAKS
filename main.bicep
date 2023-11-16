@@ -1,3 +1,5 @@
+param entraGroupID string
+
 var RGLocation = resourceGroup().location
 var acrName = 'aksacrjash'
 var acrSKU = 'Basic'
@@ -146,6 +148,13 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
       kubernetesVersion: '1.26.6' 
       enableRBAC: true
       dnsPrefix: 'akscluster-jash'
+      aadProfile:{
+        managed:true
+        adminGroupObjectIDs:[
+          entraGroupID
+        ]
+        tenantID:''
+      }
       agentPoolProfiles: [
         {
           name: 'systempool'
