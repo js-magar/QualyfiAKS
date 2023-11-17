@@ -3,7 +3,7 @@ param appGatewayPIPName string
 param appGatewayName string
 param virtualNetworkName string
 
-var RGLocation = resourceGroup().location
+param RGLocation string
 var applicationGatewayUserDefinedManagedIdentityName = '${appGatewayName}ManagedIdentity'
 var applicationGatewayUserDefinedManagedIdentityId = applicationGatewayUserDefinedManagedIdentity.id
 var appGWFIPConfigName = 'appGatewayFrontendConfig'
@@ -107,6 +107,13 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
 resource appGateway 'Microsoft.Network/applicationGateways@2023-05-01' = {
   name: appGatewayName
   location: RGLocation
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${applicationGatewayUserDefinedManagedIdentityId}': {
+      }
+    }
+  }
   properties:{
     sku: {
       name: 'WAF_v2'
@@ -223,4 +230,6 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-05-01' = {
     }
   }
 }
-
+output appGatwayId string = appGateway.id
+output appGatwayUDMId string = applicationGatewayUserDefinedManagedIdentity.id
+output appGatwayUDMName string = applicationGatewayUserDefinedManagedIdentity.name

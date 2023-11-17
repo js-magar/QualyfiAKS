@@ -1,26 +1,38 @@
 param entraGroupID string
+param acrRoleDefName string 
+param contributorRoleDefName string
+param readerRoleDefName string
 
 var RGLocation = resourceGroup().location
 var acrName = 'aksacrjash'
 var acrSKU = 'Basic'
-var linuxAdminUsername = 'username'
-var linuxAdminSSH ='ssh'
 
-var vnetAddressPrefix = '10.0'
+var vnetAddressPrefix = '10'
 var virtualNetworkName = 'virtualNetwork'
+
+var systemPoolSubnetName = 'SystemPoolSubnet'
+var systemPoolSubnetAddressPrefix = '1'
+var appPoolSubnetName = 'AppPoolSubnet'
+var appPoolSubnetAddressPrefix = '2'
+
+
+var podSubnetAddressPrefix = '3'
+var podSubnetName = 'PodSubnet'
+
+var appgwbastionPrefix ='3'
 var appGatewaySubnetAddressPrefix = '1'
 var appGatewaySubnetName = 'AppgwSubnet'
 var appGatewayPIPName = 'pip-appGateway-jash-${RGLocation}-001'
 var appGatewayName = 'appGateway-jash-${RGLocation}-001'
 
-var aksSubnetAddressPrefix = '2'
-var aksClusterName = 'aksclusterjash'
-var aksSubnetName = 'aksClusterSubnet'
-
-
-var bastionSubnetAddressPrefix = '3'
-var bastionClusterName = 'bastion-jash-${RGLocation}-001'
+var bastionSubnetAddressPrefix = '2'
+var bastionName = 'bastion-jash-${RGLocation}-001'
 var bastionSubnetName = 'AzureBastionSubnet'
+
+var aksClusterName = 'aksclusterjash'
+var natGatewayName = '${aksClusterName}NatGateway'
+var natGatewayPIPPrefixName = '${aksClusterName}PIPPrefix'
+
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name:'LAWAcrResource'
@@ -31,32 +43,71 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
     }
   }
 }
+resource publicIPPrefix 'Microsoft.Network/publicIPPrefixes@2022-05-01' = {
+  name: natGatewayPIPPrefixName
+  location: RGLocation
+  sku: {
+    name: 'Standard'
+    tier: 'Regional'
+  }
+  properties: {
+    prefixLength: 28
+    publicIPAddressVersion: 'IPv4'
+  }
+}
+resource natGateway 'Microsoft.Network/natGateways@2022-05-01' = {
+  name: natGatewayName
+  location: RGLocation
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    idleTimeoutInMinutes: 4
+    publicIpPrefixes: [
+      {
+        id: publicIPPrefix.id
+      }
+    ]
+  }
+}
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
   name: virtualNetworkName
   location: RGLocation
   properties: {
     addressSpace: {
       addressPrefixes: [
-        '${vnetAddressPrefix}.0.0/16'
+        '${vnetAddressPrefix}.0.0.0/8'
       ]
     }
     subnets: [
       {
-        name: appGatewaySubnetName
+        name: systemPoolSubnetName
         properties: {
-          addressPrefix: '${vnetAddressPrefix}.${appGatewaySubnetAddressPrefix}.0/24'
+          addressPrefix: '${vnetAddressPrefix}.${systemPoolSubnetAddressPrefix}.0.0/16'
         }
       }
       {
-        name: aksSubnetName
+        name: appPoolSubnetName
         properties: {
-          addressPrefix: '${vnetAddressPrefix}.${aksSubnetAddressPrefix}.0/24'
+          addressPrefix: '${vnetAddressPrefix}.${appPoolSubnetAddressPrefix}.0.0/16'
+        }
+      }
+      {
+        name: podSubnetName
+        properties: {
+          addressPrefix: '${vnetAddressPrefix}.${podSubnetAddressPrefix}.0.0/16'
+        }
+      }
+      {
+        name: appGatewaySubnetName
+        properties: {
+          addressPrefix: '${vnetAddressPrefix}.${appgwbastionPrefix}.${appGatewaySubnetAddressPrefix}.0/24'
         }
       }
       {
         name: bastionSubnetName
         properties: {
-          addressPrefix: '${vnetAddressPrefix}.${bastionSubnetAddressPrefix}.0/24'
+          addressPrefix: '${vnetAddressPrefix}.${appgwbastionPrefix}.${bastionSubnetAddressPrefix}.0/24'
         }
       }
     ]
@@ -69,136 +120,44 @@ module appGateway 'modules/app.bicep'={
     appGatewayPIPName:appGatewayPIPName
     appGatewayName:appGatewayName
     virtualNetworkName:virtualNetworkName
+    RGLocation:RGLocation
   }
   dependsOn:[
     virtualNetwork
   ]
 }
-resource acrResource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
-  location: RGLocation
-  name:acrName
-  sku: {
-    name: 'Basic'
-  }
-  properties: {
-    adminUserEnabled: false
-    policies: {
-      quarantinePolicy: {
-        status: 'disabled'
-      }
-      trustPolicy: {
-        type: 'Notary'
-        status: 'disabled'
-      }
-      retentionPolicy: {
-        days: 7
-        status: 'disabled'
-      }
-      exportPolicy: {
-        status: 'enabled'
-      }
-    }
-    encryption: {
-      status: 'disabled'
-    }
-    dataEndpointEnabled: false
-    publicNetworkAccess: 'Enabled'
-    networkRuleBypassOptions: 'AzureServices'
-    zoneRedundancy: 'Disabled'
+module acr 'modules/acr.bicep' = {
+  name:'appContainerRegistryDeployment'
+  params:{
+    acrName:acrName
+    logAnalyticsName:logAnalyticsWorkspace.name
+    acrSKU:acrSKU
+    acrPullRDName:acrRoleDefName
+    aksResourceID:aksCluster.outputs.aksClusterId
+    contributorRoleDefName:contributorRoleDefName
+    readerRoleDefName:readerRoleDefName
+    aksClusterUserDefinedManagedIdentityName:aksCluster.outputs.aksClusterUserDefinedManagedIdentityName
+    applicationGatewayUserDefinedManagedIdentityName:appGateway.outputs.appGatwayUDMName
+    aksClusterName:aksClusterName
+    appGatewayName:appGatewayName
+    RGLocation:RGLocation
   }
 }
-
-  
-resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-    scope: acrResource
-    name: 'default'
-    properties: {
-      workspaceId: logAnalyticsWorkspace.id
-      metrics: [
-        {
-          timeGrain: 'PT1M'
-          category: 'AllMetrics'
-          enabled: true
-        }
-      ]
-      logs: [
-        {
-          category: 'ContainerRegistryRepositoryEvents'
-          enabled: true
-        }
-        {
-          category: 'ContainerRegistryLoginEvents'
-          enabled: true
-        }
-    ]
+module aksCluster 'modules/aksCluster.bicep' = {
+  name: 'aksClusterDeployment'
+  params:{
+    aksClusterName:aksClusterName
+    entraGroupID:entraGroupID
+    logAnalyticsWorkspaceID :logAnalyticsWorkspace.id
+    appGatewayID:appGateway.outputs.appGatwayId
+    vnetName:virtualNetworkName
+    appSubnetName:appPoolSubnetName
+    systemSubnetName:systemPoolSubnetName
+    podSubnetName:podSubnetName
+    RGLocation:RGLocation
   }
-}
-  
-resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-01' = {
-    name: aksClusterName
-    location: RGLocation
-    sku: {
-      name: 'Base'
-      tier: 'Free'
-    }
-    identity: {
-      type: 'SystemAssigned'
-    }
-    properties: {
-      kubernetesVersion: '1.26.6' 
-      enableRBAC: true
-      dnsPrefix: 'akscluster-jash'
-      aadProfile:{
-        managed:true
-        adminGroupObjectIDs:[
-          entraGroupID
-        ]
-        tenantID:''
-      }
-      agentPoolProfiles: [
-        {
-          name: 'systempool'
-          count: 1
-          vmSize: 'Standard_DS2_v2' 
-          maxPods:30
-          maxCount:20
-          minCount:1
-          enableAutoScaling:true
-          osType: 'Linux'
-          osSKU: 'CBLMariner'
-          mode: 'System'
-        }
-        {
-          name: 'apppool'
-          count: 1
-          vmSize: 'Standard_DS2_v2' 
-          maxPods:30
-          maxCount:20
-          minCount:1
-          enableAutoScaling:true
-          osType: 'Linux'
-          osSKU: 'CBLMariner'
-          mode: 'System'
-          osDiskSizeGB: 30 // or specify the desired disk size
-          osDiskType: 'Managed' // or choose 'Ephemeral' if supported
-          osProfile: {
-            linuxProfile: {
-              adminUsername: linuxAdminUsername
-              ssh: {
-                publicKeys: [
-                  {
-                    keyData: linuxAdminSSH
-                  }
-                ]
-              }
-            }
-          }
-        }
-      ]
-      networkProfile: {
-        loadBalancerSku: 'Standard'
-        outboundType: 'loadBalancer'
-    }
-  }
+  dependsOn:[
+    appGateway
+  ]
 }
 
