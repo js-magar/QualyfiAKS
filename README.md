@@ -12,7 +12,7 @@ Using Azure CLI and Bicep deploy the following:
 - [ ] 6. Use ‘containerd’ for the container runtime 
 - [ x ] 7. Set the node pools to auto scale using the cluster autoscaler 
 - [ ] 8. Set the pods to auto scale using the horizontal pod autoscaler 
-- [ ] 9. Use an application namespace called ‘production’ 
+- [ x ] 9. Use an application namespace called ‘production’ 
 - [ ] 10. Use Azure CNI networking with dynamic allocation of IPs and enhanced subnet support 
 - [ x ] 11. Use AKS-managed Microsoft Entra integration, use the existing EID group ‘AKS EID Admin Group’ for Azure Kubernetes Service RBAC Cluster Admin access 
 - [ x ] 12. Use Azure role-based access control for Kubernetes Authorization 
@@ -27,8 +27,8 @@ Using Azure CLI and Bicep deploy the following:
 - [ ] 21. Enable Prometheus Monitor Metrics and Grafana for the cluster 
 
 Success Criteria:
-- [ ] 1. Connect to the application front end via the App Gateway public ip 
-- [ ] 2. User node pool running without error with the front and back-end application 
+- [ x ] 1. Connect to the application front end via the App Gateway public ip 
+- [ x ] 2. User node pool running without error with the front and back-end application 
 - [ ] 3. SSH to a node via the Bastion and the SSH keys 
 - [ ] 4. From the node load a web page via the NAT Gateway 
 - [ ] 5. Check cluster autoscaler logs for correct function of the cluster 

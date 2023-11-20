@@ -12,6 +12,9 @@ param RGLocation string
 //var linuxAdminSSH ='ssh'
 var aksClusterUserDefinedManagedIdentityName = '${aksClusterName}ManagedIdentity'
 var aadPodIdentityUserDefinedManagedIdentityName = '${aksClusterName}AadPodManagedIdentity'
+param aksClusterPodCidr string = '10.244.0.0/16'
+param aksClusterServiceCidr string = '10.5.0.0/16'
+param aksClusterDnsServiceIP string = '10.5.0.10'
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {name: vnetName}
 resource AppPoolSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existing = {name: appSubnetName,parent: virtualNetwork}
@@ -92,8 +95,12 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
     }
     */
     networkProfile: {
-      loadBalancerSku: 'Standard'
-      outboundType: 'loadBalancer'
+      outboundType: 'userAssignedNATGateway'
+      networkPlugin:'azure'
+      networkPolicy: 'azure'
+      podCidr: aksClusterPodCidr
+      serviceCidr: aksClusterServiceCidr
+      dnsServiceIP: aksClusterDnsServiceIP
     }
     addonProfiles: {
       omsagent: {

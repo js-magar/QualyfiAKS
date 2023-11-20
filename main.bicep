@@ -2,6 +2,7 @@ param entraGroupID string
 param acrRoleDefName string 
 param contributorRoleDefName string
 param readerRoleDefName string
+param netContributorRoleDefName string
 
 var RGLocation = resourceGroup().location
 var acrName = 'aksacrjash'
@@ -19,7 +20,7 @@ var appPoolSubnetAddressPrefix = '2'
 var podSubnetAddressPrefix = '3'
 var podSubnetName = 'PodSubnet'
 
-var appgwbastionPrefix ='3'
+var appgwbastionPrefix ='4'
 var appGatewaySubnetAddressPrefix = '1'
 var appGatewaySubnetName = 'AppgwSubnet'
 var appGatewayPIPName = 'pip-appGateway-jash-${RGLocation}-001'
@@ -84,18 +85,27 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
         name: systemPoolSubnetName
         properties: {
           addressPrefix: '${vnetAddressPrefix}.${systemPoolSubnetAddressPrefix}.0.0/16'
+          natGateway:{
+            id:natGateway.id
+          }
         }
       }
       {
         name: appPoolSubnetName
         properties: {
           addressPrefix: '${vnetAddressPrefix}.${appPoolSubnetAddressPrefix}.0.0/16'
+          natGateway:{
+            id:natGateway.id
+          }
         }
       }
       {
         name: podSubnetName
         properties: {
           addressPrefix: '${vnetAddressPrefix}.${podSubnetAddressPrefix}.0.0/16'
+          natGateway:{
+            id:natGateway.id
+          }
         }
       }
       {
@@ -131,11 +141,12 @@ module acr 'modules/acr.bicep' = {
   params:{
     acrName:acrName
     logAnalyticsName:logAnalyticsWorkspace.name
-    acrSKU:acrSKU
+    //acrSKU:acrSKU
     acrPullRDName:acrRoleDefName
     aksResourceID:aksCluster.outputs.aksClusterId
     contributorRoleDefName:contributorRoleDefName
-    readerRoleDefName:readerRoleDefName
+    netContributorRoleDefName:netContributorRoleDefName
+    //readerRoleDefName:readerRoleDefName
     aksClusterUserDefinedManagedIdentityName:aksCluster.outputs.aksClusterUserDefinedManagedIdentityName
     applicationGatewayUserDefinedManagedIdentityName:appGateway.outputs.appGatwayUDMName
     aksClusterName:aksClusterName
@@ -160,4 +171,21 @@ module aksCluster 'modules/aksCluster.bicep' = {
     appGateway
   ]
 }
-
+/*
+resource containerInsightsSolution 'Microsoft.OperationsManagement/solutions@2015-11-01-preview' = {
+  name: 'containerInsights'
+  location: RGLocation
+  plan: {
+    name: 'containerInsights'
+    promotionCode: ''
+    product: 'OMSGallery/ContainerInsights'
+    publisher: 'Microsoft'
+  }
+  properties: {
+    workspaceResourceId: logAnalyticsWorkspace.id
+  }
+  dependsOn:[
+    acr
+  ]
+}
+*/

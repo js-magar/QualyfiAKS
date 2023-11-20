@@ -4,6 +4,7 @@ param logAnalyticsName string
 param aksResourceID string
 param acrPullRDName string 
 param contributorRoleDefName string
+param netContributorRoleDefName string
 //param readerRoleDefName string
 param aksClusterUserDefinedManagedIdentityName string
 param applicationGatewayUserDefinedManagedIdentityName string
@@ -11,14 +12,22 @@ param aksClusterName string
 param appGatewayName string
 
 param RGLocation string
-var aksContributorRoleAssignmentName = guid('${resourceGroup().id}${aksClusterUserDefinedManagedIdentityName}${aksClusterName}')
-var appGwContributorRoleAssignmentName = guid('${resourceGroup().id}${applicationGatewayUserDefinedManagedIdentityName}${appGatewayName}')
+var aksContributorRoleAssignmentName = guid(aksClusterUserDefinedManagedIdentity.id, contributorRoleId, resourceGroup().id)
+var appGwContributorRoleAssignmentName = guid(applicationGatewayUserDefinedManagedIdentity.id, contributorRoleId, resourceGroup().id)
+var appGwNetContributorRoleAssignmentName = guid(applicationGatewayUserDefinedManagedIdentity.id, netContributorRoleId, resourceGroup().id)
 
 var acrPullRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRDName)
 var contributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', contributorRoleDefName)
+var netContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', netContributorRoleDefName)
 //var readerRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', readerRoleDefName)
+var acrPullRoleAssignmentName = guid('${resourceGroup().id}acrPullRoleAssignment')
 
-var acrPullRoleAssignmentName = '${guid('${resourceGroup().id}acrPullRoleAssignment')}'
+resource applicationGatewayUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing  = {
+  name: applicationGatewayUserDefinedManagedIdentityName
+}
+resource aksClusterUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+  name: aksClusterUserDefinedManagedIdentityName
+}
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name:logAnalyticsName
 }
@@ -79,9 +88,6 @@ resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-previe
     ]
   }
 }
-resource aksClusterUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
-  name: aksClusterUserDefinedManagedIdentityName
-}
 resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: acrPullRoleAssignmentName
   properties: {
@@ -110,6 +116,15 @@ resource appGwContributorRoleAssignment 'Microsoft.Authorization/roleAssignments
     principalType: 'ServicePrincipal'
   }
 }
+resource appGwNetContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: appGwNetContributorRoleAssignmentName
+  properties: {
+    roleDefinitionId: netContributorRoleId
+    principalId: reference(aksResourceID, '2023-08-01', 'Full').properties.addonProfiles.ingressApplicationGateway.identity.objectId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 /*
 resource keyVaultName_Microsoft_Authorization_id_readerRoleId 'Microsoft.KeyVault/vaults/providers/roleAssignments@2020-04-01-preview' = {
   name: '${keyVaultName}/Microsoft.Authorization/${guid(concat(resourceGroup().id), readerRoleId)}'

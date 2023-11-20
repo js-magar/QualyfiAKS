@@ -131,6 +131,8 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-05-01' = {
           port:80
           protocol:'Http'
           cookieBasedAffinity: 'Disabled'
+          requestTimeout: 30
+          pickHostNameFromBackendAddress: true
         }
       }
     ]
@@ -181,7 +183,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-05-01' = {
         name:'appGWRoutingRule'
         properties:{
           ruleType:'Basic'
-          priority:110
+          priority: 1000
           httpListener:{
             id:resourceId('Microsoft.Network/applicationGateways/httpListeners', appGatewayName, appGWhttpListenerName)
           }
