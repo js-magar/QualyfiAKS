@@ -28,7 +28,7 @@ az aks get-credentials --resource-group $RGName --name $AKSCLUSTERNAME
 kubectl get nodes
 az acr list --resource-group $RGName --query "[].{acrLoginServer:loginServer}" --output table
 kubectl create namespace production
-kubectl apply -f azure-voting-app-redis/azure-vote-all-in-one-redis.yaml 
+kubectl apply -f azure-vote.yaml 
 kubectl get service azure-vote-front --watch
 
 #az rest --method GET --url "https://management.azure.com/subscriptions/a4c81412-9cb9-4d76-aaa7-14f85696678a/resourceGroups/azure-devops-track-aks-exercise-jash/providers/Microsoft.ContainerRegistry/registries/aksacrjash?api-version=2023-07-01"
