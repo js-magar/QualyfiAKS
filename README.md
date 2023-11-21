@@ -25,7 +25,7 @@ Using Azure CLI and Bicep deploy the following:
 - [ ] 18. Use a ‘standard’ sku Bastion and public/private keys to SSH to the pods
 - [ ] 19. Enable IP subnet usage monitoring for the cluster
 - [x] 20. Enable Container Insights for the cluster
-- [ ] 21. Enable Prometheus Monitor Metrics and Grafana for the cluster
+- [x] 21. Enable Prometheus Monitor Metrics and Grafana for the cluster
 
 Success Criteria:
 

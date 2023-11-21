@@ -184,6 +184,7 @@ module metrics 'modules/monitor_metrics.bicep' = {
   params:{
     RGLocation:RGLocation
     clusterName:aksClusterName
+    groupId:entraGroupID
   }
   dependsOn:[
     acr
@@ -191,21 +192,3 @@ module metrics 'modules/monitor_metrics.bicep' = {
     appGateway
   ]
 }
-/*
-resource containerInsightsSolution 'Microsoft.OperationsManagement/solutions@2015-11-01-preview' = {
-  name: 'containerInsights'
-  location: RGLocation
-  plan: {
-    name: 'containerInsights'
-    promotionCode: ''
-    product: 'OMSGallery/ContainerInsights'
-    publisher: 'Microsoft'
-  }
-  properties: {
-    workspaceResourceId: logAnalyticsWorkspace.id
-  }
-  dependsOn:[
-    acr
-  ]
-}
-*/

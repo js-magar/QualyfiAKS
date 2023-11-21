@@ -2,6 +2,7 @@
 param RGLocation string = resourceGroup().location
 param clusterName string
 param tags object ={tag:'tag'}
+param groupId string
 
 var kubernetesRecordingRuleGrouPrefix = 'KubernetesRecordingRulesRuleGroup-'
 var kubernetesRecordingRuleGroupName = '${kubernetesRecordingRuleGrouPrefix}${clusterName}'
@@ -162,6 +163,51 @@ resource managedGrafana 'Microsoft.Dashboard/grafana@2022-08-01' =  {
     }
     publicNetworkAccess: 'Disabled'
     zoneRedundancy: 'Disabled'
+  }
+}
+
+resource mmonitoringReaderRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
+  name: '43d0d8ad-25c7-4714-9337-8ba259a9fe05'
+  scope: subscription()
+}
+
+resource monitoringDataReaderRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
+  name: 'b0d8363b-8ddd-447d-831f-62ca05bff136'
+  scope: subscription()
+}
+
+resource grafanaAdminRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
+  name: '22926164-76b3-42b3-bc55-97df8dab3e41'
+  scope: subscription()
+}
+
+resource monitoringReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name:  guid(managedGrafana.name, azureMonitorWorkspace.name, mmonitoringReaderRole.id)
+  scope: azureMonitorWorkspace
+  properties: {
+    roleDefinitionId: mmonitoringReaderRole.id
+    principalId: managedGrafana.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource monitoringDataReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name:  guid(managedGrafana.name, azureMonitorWorkspace.name, monitoringDataReaderRole.id)
+  scope: azureMonitorWorkspace
+  properties: {
+    roleDefinitionId: monitoringDataReaderRole.id
+    principalId: managedGrafana.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource grafanaAdminRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name:  guid(managedGrafana.name, groupId, grafanaAdminRole.id)
+  scope: managedGrafana
+  properties: {
+    roleDefinitionId: grafanaAdminRole.id
+    principalId: groupId
+    principalType: 'Group'
   }
 }
 
