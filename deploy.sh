@@ -1,5 +1,4 @@
 # azure-devops-track-aks-exercise-jash
-git clone https://github.com/Azure-Samples/azure-voting-app-redis.git
 RGName="azure-devops-track-aks-exercise-jash1"
 ACRNAME="aksacrjash"
 AKSCLUSTERNAME="aksclusterjash"
@@ -30,4 +29,3 @@ kubectl get nodes
 az acr list --resource-group $RGName --query "[].{acrLoginServer:loginServer}" --output table
 kubectl create namespace production
 kubectl apply -f azure-vote.yaml --namespace production
-kubectl get service azure-vote-front --watch

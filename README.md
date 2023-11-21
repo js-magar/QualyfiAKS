@@ -10,7 +10,7 @@ Using Azure CLI and Bicep deploy the following:
 - [x] 3. Use a ‘basic’ sku ACR to store the application in your subscription and deploy from there
 - [x] 4. Use Linux node pools using the Mariner OS (Microsoft Linux)
 - [x] 5. Create two node pools, one for system and one for the application – use default sku for node pool vm’s which is ‘Standard_DS2_v2’
-- [ ] 6. Use ‘containerd’ for the container runtime
+- [x] 6. Use ‘containerd’ for the container runtime
 - [x] 7. Set the node pools to auto scale using the cluster autoscaler
 - [ ] 8. Set the pods to auto scale using the horizontal pod autoscaler
 - [x] 9. Use an application namespace called ‘production’
@@ -19,12 +19,12 @@ Using Azure CLI and Bicep deploy the following:
 - [x] 12. Use Azure role-based access control for Kubernetes Authorization
 - [x] 13. Disable local user accounts
 - [x] 14. Use an Application Gateway for ingress traffic
-- [ ] 15. Use a NAT gateway for internet egress traffic
-- [ ] 16. Use a system assigned managed identity for the cluster
+- [x] 15. Use a NAT gateway for internet egress traffic
+- [x] 16. Use a system assigned managed identity for the cluster
 - [ ] 17. Use the Azure Key Vault provider to secure Kubernetes secrets in AKS, create an example secret and attach it to the backend pods
 - [ ] 18. Use a ‘standard’ sku Bastion and public/private keys to SSH to the pods
 - [ ] 19. Enable IP subnet usage monitoring for the cluster
-- [ ] 20. Enable Container Insights for the cluster
+- [x] 20. Enable Container Insights for the cluster
 - [ ] 21. Enable Prometheus Monitor Metrics and Grafana for the cluster
 
 Success Criteria:
