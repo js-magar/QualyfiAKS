@@ -3,8 +3,8 @@ param appGatewayPIPName string
 param appGatewayName string
 param virtualNetworkName string
 
-param RGLocation string
-var applicationGatewayUserDefinedManagedIdentityName = '${appGatewayName}ManagedIdentity'
+param location string
+var applicationGatewayUserDefinedManagedIdentityName = 'id-appgw-${location}-001'
 var applicationGatewayUserDefinedManagedIdentityId = applicationGatewayUserDefinedManagedIdentity.id
 var appGWFIPConfigName = 'appGatewayFrontendConfig'
 var appGWFPortName = 'frontendHttpPort80'
@@ -25,7 +25,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' existing 
 resource AppGatewaySubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existing = {name: appGatewaySubnetName,parent: virtualNetwork}
 resource appGatewayPIP 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
   name: appGatewayPIPName
-  location: RGLocation
+  location: location
   sku: {
     name: 'Standard'
   }
@@ -35,11 +35,11 @@ resource appGatewayPIP 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
 }
 resource applicationGatewayUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: applicationGatewayUserDefinedManagedIdentityName
-  location: RGLocation
+  location: location
 }
 resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies@2023-05-01' = {
   name: wafPolicyName
-  location: RGLocation
+  location: location
   properties: {
     customRules: [
       {
@@ -106,7 +106,7 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
 }
 resource appGateway 'Microsoft.Network/applicationGateways@2023-05-01' = {
   name: appGatewayName
-  location: RGLocation
+  location: location
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {

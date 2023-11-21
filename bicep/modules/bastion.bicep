@@ -1,4 +1,4 @@
-param RGLocation string
+param location string
 param bastionSubnetName string
 param vnetName string
 param tags object ={tag:'tag'}
@@ -10,7 +10,7 @@ resource BastionSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' ex
 
 resource bastionPIP 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
   name: 'pip-${bastionName}'
-  location: RGLocation
+  location: location
   tags:tags
   sku: {
     name: 'Standard'
@@ -21,7 +21,7 @@ resource bastionPIP 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
 }
 resource bastion 'Microsoft.Network/bastionHosts@2023-05-01' = {
   name: bastionName
-  location:RGLocation
+  location:location
   tags:tags
   properties: {
     ipConfigurations: [

@@ -7,11 +7,10 @@ param systemSubnetName string
 param appSubnetName string
 param podSubnetName string
 param adminUsername string
-param adminPasswordOrKey string
+param adminPasOrKey string
 
-param RGLocation string
-var aksClusterUserDefinedManagedIdentityName = '${aksClusterName}ManagedIdentity'
-var aadPodIdentityUserDefinedManagedIdentityName = '${aksClusterName}AadPodManagedIdentity'
+param location string
+var aksClusterUserDefinedManagedIdentityName = 'id-aksCluster-${location}-001'
 param aksClusterPodCidr string = '10.244.0.0/16'
 param aksClusterServiceCidr string = '10.5.0.0/16'
 param aksClusterDnsServiceIP string = '10.5.0.10'
@@ -23,15 +22,11 @@ resource PodSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existi
 
 resource aksClusterUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: aksClusterUserDefinedManagedIdentityName
-  location: RGLocation
-}
-resource aadPodIdentityUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
-  name: aadPodIdentityUserDefinedManagedIdentityName
-  location: RGLocation
+  location: location
 }
 resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-01' = {
   name: aksClusterName
-  location: RGLocation
+  location: location
   sku: {
       name: 'Base'
       tier: 'Free'
@@ -85,7 +80,7 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
         ssh:{
           publicKeys: [
             {
-              keyData: 'ssh-rsa ${adminPasswordOrKey}\n'
+              keyData: 'ssh-rsa ${adminPasOrKey}\n'
             }
           ]
         }

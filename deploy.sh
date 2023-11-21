@@ -3,9 +3,10 @@ ssh-keygen -m PEM -t rsa -b 4096 -f ./keys/keys
 sshKey=$(awk '{print $2}' ./keys/keys.pub)
 userName="jashusername"
 
-RGName="azure-devops-track-aks-exercise-jash1"
+RGName="azure-devops-track-aks-exercise-jash"
 ACRNAME="aksacrjash"
 AKSCLUSTERNAME="aksclusterjash"
+LOCATION="uksouth"
 ID=$(az ad group list --display-name 'AKS EID Admin Group' --query "[].{id:id}" --output tsv)
 ACRROLEDEF=$(az role definition list --name 'AcrPull' --query "[].{name:name}" --output tsv)
 READERROLEDEF=$(az role definition list --name 'Reader' --query "[].{name:name}" --output tsv)
@@ -16,7 +17,7 @@ az group create --name $RGName --location uksouth
 az deployment group create --resource-group $RGName --template-file ./bicep/main.bicep \
  --parameters entraGroupID=$ID acrRoleDefName=$ACRROLEDEF readerRoleDefName=$READERROLEDEF \
  contributorRoleDefName=$CONTRIBUTORROLEDEF netContributorRoleDefName=$NETCONTRIBUTORROLEDEF \
- adminUsername=$userName adminPasswordOrKey=sshKey
+ adminUsername=$userName adminPasOrKey=$sshKey aksClusterName=$AKSCLUSTERNAME acrName=$ACRNAME location=$LOCATION
 
 #az aks install-cli
 # Clone app
@@ -37,3 +38,4 @@ az acr list --resource-group $RGName --query "[].{acrLoginServer:loginServer}" -
 kubectl create namespace production
 kubectl apply -f ./yaml/azure-vote.yaml --namespace production
 kubectl apply -f ./yaml/container-azm-ms-agentconfig.yaml
+kubectl autoscale deployment azure-vote-front --namespace production --cpu-percent=50 --min=1 --max=10

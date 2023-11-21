@@ -4,11 +4,10 @@ param contributorRoleDefName string
 param readerRoleDefName string
 param netContributorRoleDefName string
 param adminUsername string
-param adminPasswordOrKey string
-
-var RGLocation = resourceGroup().location
-var acrName = 'aksacrjash'
-var acrSKU = 'Basic'
+param adminPasOrKey string
+param aksClusterName string
+param acrName string
+param location string
 
 var vnetAddressPrefix = '10'
 var virtualNetworkName = 'virtualNetwork'
@@ -25,21 +24,22 @@ var podSubnetName = 'PodSubnet'
 var appgwbastionPrefix ='4'
 var appGatewaySubnetAddressPrefix = '1'
 var appGatewaySubnetName = 'AppgwSubnet'
-var appGatewayPIPName = 'pip-appGateway-jash-${RGLocation}-001'
-var appGatewayName = 'appGateway-jash-${RGLocation}-001'
+var appGatewayPIPName = 'pip-appGateway-jash-${location}-001'
+var appGatewayName = 'appGateway-jash-${location}-001'
 
 var bastionSubnetAddressPrefix = '2'
-var bastionName = 'bastion-jash-${RGLocation}-001'
+var bastionName = 'bastion-jash-${location}-001'
 var bastionSubnetName = 'AzureBastionSubnet'
 
-var aksClusterName = 'aksclusterjash'
 var natGatewayName = '${aksClusterName}NatGateway'
 var natGatewayPIPPrefixName = '${aksClusterName}PIPPrefix'
+
+var keyVaultName = 'kv-akscluster-${location}-001'
 
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name:'LAWAcrResource'
-  location:RGLocation
+  location:location
   properties:{
     features:{
       enableLogAccessUsingOnlyResourcePermissions:true
@@ -48,7 +48,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 }
 resource publicIPPrefix 'Microsoft.Network/publicIPPrefixes@2022-05-01' = {
   name: natGatewayPIPPrefixName
-  location: RGLocation
+  location: location
   sku: {
     name: 'Standard'
     tier: 'Regional'
@@ -60,7 +60,7 @@ resource publicIPPrefix 'Microsoft.Network/publicIPPrefixes@2022-05-01' = {
 }
 resource natGateway 'Microsoft.Network/natGateways@2022-05-01' = {
   name: natGatewayName
-  location: RGLocation
+  location: location
   sku: {
     name: 'Standard'
   }
@@ -75,7 +75,7 @@ resource natGateway 'Microsoft.Network/natGateways@2022-05-01' = {
 }
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
   name: virtualNetworkName
-  location: RGLocation
+  location: location
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -140,7 +140,7 @@ module appGateway 'modules/app.bicep'={
     appGatewayPIPName:appGatewayPIPName
     appGatewayName:appGatewayName
     virtualNetworkName:virtualNetworkName
-    RGLocation:RGLocation
+    location:location
   }
   dependsOn:[
     virtualNetwork
@@ -151,17 +151,7 @@ module acr 'modules/acr.bicep' = {
   params:{
     acrName:acrName
     logAnalyticsName:logAnalyticsWorkspace.name
-    //acrSKU:acrSKU
-    acrPullRDName:acrRoleDefName
-    aksResourceID:aksCluster.outputs.aksClusterId
-    contributorRoleDefName:contributorRoleDefName
-    netContributorRoleDefName:netContributorRoleDefName
-    //readerRoleDefName:readerRoleDefName
-    aksClusterUserDefinedManagedIdentityName:aksCluster.outputs.aksClusterUserDefinedManagedIdentityName
-    applicationGatewayUserDefinedManagedIdentityName:appGateway.outputs.appGatwayUDMName
-    aksClusterName:aksClusterName
-    appGatewayName:appGatewayName
-    RGLocation:RGLocation
+    location:location
   }
 }
 module aksCluster 'modules/aksCluster.bicep' = {
@@ -175,18 +165,19 @@ module aksCluster 'modules/aksCluster.bicep' = {
     appSubnetName:appPoolSubnetName
     systemSubnetName:systemPoolSubnetName
     podSubnetName:podSubnetName
-    RGLocation:RGLocation
+    location:location
     adminUsername:adminUsername
-    adminPasswordOrKey:adminPasswordOrKey
+    adminPasOrKey:adminPasOrKey
   }
   dependsOn:[
     appGateway
+    keyVault
   ]
 }
 module metrics 'modules/monitor_metrics.bicep' = {
   name: 'metricsDeployment'
   params:{
-    RGLocation:RGLocation
+    location:location
     clusterName:aksClusterName
     groupId:entraGroupID
   }
@@ -199,7 +190,7 @@ module metrics 'modules/monitor_metrics.bicep' = {
 module bastion 'modules/bastion.bicep' = {
   name: 'bastionDeployment'
   params:{
-    RGLocation:RGLocation
+    location:location
     vnetName:virtualNetwork.name
     bastionSubnetName:bastionSubnetName
     bastionName:bastionName
@@ -209,4 +200,30 @@ module bastion 'modules/bastion.bicep' = {
     aksCluster
     appGateway
   ]
+}
+module managedIdentities 'modules/managedIdentity.bicep' = {
+  name: 'managedIdentitiesDeployment'
+  params:{
+    acrPullRDName:acrRoleDefName
+    aksResourceID:aksCluster.outputs.aksClusterId
+    contributorRoleDefName:contributorRoleDefName
+    netContributorRoleDefName:netContributorRoleDefName
+    readerRoleDefName:readerRoleDefName
+    aksClusterUserDefinedManagedIdentityName:aksCluster.outputs.aksClusterUserDefinedManagedIdentityName
+    applicationGatewayUserDefinedManagedIdentityName:appGateway.outputs.appGatwayUDMName
+    aksClusterName:aksClusterName
+    keyVaultName:keyVaultName
+    podManagedIdentityName:keyVault.outputs.podIdentityUserDefinedManagedIdentityName
+  }
+  dependsOn:[
+    acr
+  ]
+}
+module keyVault 'modules/keyVault.bicep' = {
+  name: 'keyVaultDeployment'
+  params:{
+    location:location
+    keyVaultName:keyVaultName
+    applicationGatewayManagedIdentityName:appGateway.outputs.appGatwayUDMName
+  }
 }

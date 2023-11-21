@@ -1,5 +1,5 @@
 
-param RGLocation string = resourceGroup().location
+param location string = resourceGroup().location
 param clusterName string
 param tags object ={tag:'tag'}
 param groupId string
@@ -13,13 +13,13 @@ var version = ' - 1'
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-06-02-preview' existing = {name: clusterName}
 resource azureMonitorWorkspace 'Microsoft.Monitor/accounts@2023-04-03' = {
   name: 'jashAzureMonitorWorkspace'
-  location: RGLocation
+  location: location
   tags: tags
 }
 //Prometheus
 resource dataCollectionEndpoint 'Microsoft.Insights/dataCollectionEndpoints@2022-06-01' = {
-  name: 'prometheus-dce-${RGLocation}-${clusterName}'
-  location: RGLocation
+  name: 'prometheus-dce-${location}-${clusterName}'
+  location: location
   kind: 'Linux'
   tags: tags
   properties: {
@@ -29,8 +29,8 @@ resource dataCollectionEndpoint 'Microsoft.Insights/dataCollectionEndpoints@2022
   }
 }
 resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' = {
-  name: 'prometheus-dcr-${RGLocation}-${clusterName}'
-  location: RGLocation
+  name: 'prometheus-dcr-${location}-${clusterName}'
+  location: location
   tags: tags
 
   properties: {
@@ -67,7 +67,7 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' 
   }
 }
 resource dataCollectionRuleAssociation 'Microsoft.Insights/dataCollectionRuleAssociations@2022-06-01' = {
-  name: 'prometheus-dcra-${RGLocation}-${clusterName}'
+  name: 'prometheus-dcra-${location}-${clusterName}'
   scope: aksCluster
   properties: {
     dataCollectionRuleId: dataCollectionRule.id
@@ -76,7 +76,7 @@ resource dataCollectionRuleAssociation 'Microsoft.Insights/dataCollectionRuleAss
 }
 resource kubernetesRecordingRuleGroup 'Microsoft.AlertsManagement/prometheusRuleGroups@2023-03-01' = {
   name: kubernetesRecordingRuleGroupName
-  location: RGLocation
+  location: location
   properties: {
     description: '${kubernetesRecordingRuleGroupDescription}${version}'
     scopes: [
@@ -144,7 +144,7 @@ resource kubernetesRecordingRuleGroup 'Microsoft.AlertsManagement/prometheusRule
 //Grafana
 resource managedGrafana 'Microsoft.Dashboard/grafana@2022-08-01' =  {
   name: 'jashManagedGrafana'
-  location: RGLocation
+  location: location
   tags: tags
   sku: {
     name: 'Standard'
