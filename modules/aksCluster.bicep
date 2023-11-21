@@ -52,8 +52,7 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
         tenantID:subscription().tenantId
     }
     agentPoolProfiles: [
-        {
-          name: 'systempool'
+        {name: 'systempool'
           count: 1
           vmSize: 'Standard_DS2_v2' 
           vnetSubnetID:SystemPoolSubnet.id
@@ -67,8 +66,7 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
           mode: 'System'
 
         }
-        {
-          name: 'apppool'
+        {name: 'apppool'
           count: 1
           vmSize: 'Standard_DS2_v2' 
           vnetSubnetID:AppPoolSubnet.id
@@ -125,6 +123,11 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
         config: {
           applicationGatewayId: appGatewayID
         }
+        enabled: true
+      }
+    }
+    azureMonitorProfile: {
+      metrics: {
         enabled: true
       }
     }

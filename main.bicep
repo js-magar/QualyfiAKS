@@ -106,6 +106,14 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
           natGateway:{
             id:natGateway.id
           }
+          delegations: [
+            {
+              name: 'Delegation'
+              properties: {
+                serviceName: 'Microsoft.ContainerService/managedClusters'
+              }
+            }
+          ]
         }
       }
       {
@@ -168,6 +176,18 @@ module aksCluster 'modules/aksCluster.bicep' = {
     RGLocation:RGLocation
   }
   dependsOn:[
+    appGateway
+  ]
+}
+module metrics 'modules/monitor_metrics.bicep' = {
+  name: 'metricsDeployment'
+  params:{
+    RGLocation:RGLocation
+    clusterName:aksClusterName
+  }
+  dependsOn:[
+    acr
+    aksCluster
     appGateway
   ]
 }
