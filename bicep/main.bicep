@@ -3,6 +3,8 @@ param acrRoleDefName string
 param contributorRoleDefName string
 param readerRoleDefName string
 param netContributorRoleDefName string
+param adminUsername string
+param adminPasswordOrKey string
 
 var RGLocation = resourceGroup().location
 var acrName = 'aksacrjash'
@@ -174,6 +176,8 @@ module aksCluster 'modules/aksCluster.bicep' = {
     systemSubnetName:systemPoolSubnetName
     podSubnetName:podSubnetName
     RGLocation:RGLocation
+    adminUsername:adminUsername
+    adminPasswordOrKey:adminPasswordOrKey
   }
   dependsOn:[
     appGateway
@@ -185,6 +189,20 @@ module metrics 'modules/monitor_metrics.bicep' = {
     RGLocation:RGLocation
     clusterName:aksClusterName
     groupId:entraGroupID
+  }
+  dependsOn:[
+    acr
+    aksCluster
+    appGateway
+  ]
+}
+module bastion 'modules/bastion.bicep' = {
+  name: 'bastionDeployment'
+  params:{
+    RGLocation:RGLocation
+    vnetName:virtualNetwork.name
+    bastionSubnetName:bastionSubnetName
+    bastionName:bastionName
   }
   dependsOn:[
     acr

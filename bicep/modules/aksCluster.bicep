@@ -6,10 +6,10 @@ param vnetName string
 param systemSubnetName string
 param appSubnetName string
 param podSubnetName string
+param adminUsername string
+param adminPasswordOrKey string
 
 param RGLocation string
-//var linuxAdminUsername = 'username'
-//var linuxAdminSSH ='ssh'
 var aksClusterUserDefinedManagedIdentityName = '${aksClusterName}ManagedIdentity'
 var aadPodIdentityUserDefinedManagedIdentityName = '${aksClusterName}AadPodManagedIdentity'
 param aksClusterPodCidr string = '10.244.0.0/16'
@@ -80,18 +80,16 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
           mode: 'System'
         }
     ]
-    /*
     linuxProfile: {
-        adminUsername: linuxAdminUsername
-        ssh: {
+        adminUsername: adminUsername
+        ssh:{
           publicKeys: [
             {
-              keyData: linuxAdminSSH
+              keyData: 'ssh-rsa ${adminPasswordOrKey}\n'
             }
           ]
         }
     }
-    */
     networkProfile: {
       outboundType: 'userAssignedNATGateway'
       networkPlugin:'azure'

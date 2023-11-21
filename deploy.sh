@@ -1,4 +1,8 @@
 # azure-devops-track-aks-exercise-jash
+ssh-keygen -m PEM -t rsa -b 4096 -f ./keys/keys
+sshKey=$(awk '{print $2}' ./keys/keys.pub)
+userName="jashusername"
+
 RGName="azure-devops-track-aks-exercise-jash1"
 ACRNAME="aksacrjash"
 AKSCLUSTERNAME="aksclusterjash"
@@ -7,17 +11,20 @@ ACRROLEDEF=$(az role definition list --name 'AcrPull' --query "[].{name:name}" -
 READERROLEDEF=$(az role definition list --name 'Reader' --query "[].{name:name}" --output tsv)
 CONTRIBUTORROLEDEF=$(az role definition list --name 'Contributor' --query "[].{name:name}" --output tsv)
 NETCONTRIBUTORROLEDEF=$(az role definition list --name 'Network Contributor' --query "[].{name:name}" --output tsv)
+
 az group create --name $RGName --location uksouth
-#run main
-az deployment group create --resource-group $RGName --template-file main.bicep \
+az deployment group create --resource-group $RGName --template-file ./bicep/main.bicep \
  --parameters entraGroupID=$ID acrRoleDefName=$ACRROLEDEF readerRoleDefName=$READERROLEDEF \
- contributorRoleDefName=$CONTRIBUTORROLEDEF netContributorRoleDefName=$NETCONTRIBUTORROLEDEF
+ contributorRoleDefName=$CONTRIBUTORROLEDEF netContributorRoleDefName=$NETCONTRIBUTORROLEDEF \
+ adminUsername=$userName adminPasswordOrKey=sshKey
+
 #az aks install-cli
 # Clone app
 #docker compose -f azure-voting-app-redis/docker-compose.yaml up -d   
 #docker images
 #docker ps
 #docker compose down
+
 sleep 5 
 az acr show -n $ACRNAME  
 az acr list -o table 
@@ -28,4 +35,5 @@ az aks get-credentials --resource-group $RGName --name $AKSCLUSTERNAME
 kubectl get nodes
 az acr list --resource-group $RGName --query "[].{acrLoginServer:loginServer}" --output table
 kubectl create namespace production
-kubectl apply -f azure-vote.yaml --namespace production
+kubectl apply -f ./yaml/azure-vote.yaml --namespace production
+kubectl apply -f ./yaml/container-azm-ms-agentconfig.yaml
