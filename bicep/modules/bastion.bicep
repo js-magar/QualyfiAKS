@@ -23,7 +23,12 @@ resource bastion 'Microsoft.Network/bastionHosts@2023-05-01' = {
   name: bastionName
   location:location
   tags:tags
+  sku: {
+    name: 'Standard'
+  }
   properties: {
+    enableIpConnect: true
+    enableTunneling: true
     ipConfigurations: [
       {
         name: 'ipconfig'

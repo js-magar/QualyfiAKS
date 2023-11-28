@@ -9,6 +9,8 @@ param aksClusterName string
 param acrName string
 param location string
 
+var name = 'jash'
+
 var vnetAddressPrefix = '10'
 var virtualNetworkName = 'virtualNetwork'
 
@@ -34,7 +36,7 @@ var bastionSubnetName = 'AzureBastionSubnet'
 var natGatewayName = '${aksClusterName}NatGateway'
 var natGatewayPIPPrefixName = '${aksClusterName}PIPPrefix'
 
-var keyVaultName = 'kv-akscluster-${location}-001'
+var keyVaultName = 'kv-${name}-${location}-1'
 
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
@@ -187,6 +189,7 @@ module metrics 'modules/monitor_metrics.bicep' = {
     appGateway
   ]
 }
+/*
 module bastion 'modules/bastion.bicep' = {
   name: 'bastionDeployment'
   params:{
@@ -201,6 +204,7 @@ module bastion 'modules/bastion.bicep' = {
     appGateway
   ]
 }
+*/
 module managedIdentities 'modules/managedIdentity.bicep' = {
   name: 'managedIdentitiesDeployment'
   params:{

@@ -118,6 +118,12 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
         }
         enabled: true
       }
+      azureKeyvaultSecretsProvider: {
+        config: {
+          enableSecretRotation: 'false'
+        }
+        enabled: true
+      }
     }
     azureMonitorProfile: {
       metrics: {

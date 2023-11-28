@@ -1,4 +1,6 @@
 # azure-devops-track-aks-exercise-jash
+export MSYS_NO_PATHCONV=1
+
 ssh-keygen -m PEM -t rsa -b 4096 -f ./keys/keys
 sshKey=$(awk '{print $2}' ./keys/keys.pub)
 userName="jashusername"
@@ -12,6 +14,7 @@ ACRROLEDEF=$(az role definition list --name 'AcrPull' --query "[].{name:name}" -
 READERROLEDEF=$(az role definition list --name 'Reader' --query "[].{name:name}" --output tsv)
 CONTRIBUTORROLEDEF=$(az role definition list --name 'Contributor' --query "[].{name:name}" --output tsv)
 NETCONTRIBUTORROLEDEF=$(az role definition list --name 'Network Contributor' --query "[].{name:name}" --output tsv)
+KVADMINROLEDEF=$(az role definition list --name 'Key Vault Administrator' --query "[].{name:name}" --output tsv)
 
 az group create --name $RGName --location uksouth
 az deployment group create --resource-group $RGName --template-file ./bicep/main.bicep \
@@ -32,10 +35,14 @@ az acr list -o table
 az acr login --name 'aksacrjash'
 az acr build --registry $ACRNAME --image mcr.microsoft.com/azuredocs/azure-vote-front:v1 ./azure-voting-app-redis/azure-vote
 az acr build --registry $ACRNAME --image mcr.microsoft.com/oss/bitnami/redis ./azure-voting-app-redis/azure-vote
-az aks get-credentials --resource-group $RGName --name $AKSCLUSTERNAME
-kubectl get nodes
-az acr list --resource-group $RGName --query "[].{acrLoginServer:loginServer}" --output table
-kubectl create namespace production
-kubectl apply -f ./yaml/azure-vote.yaml --namespace production
-kubectl apply -f ./yaml/container-azm-ms-agentconfig.yaml
-kubectl autoscale deployment azure-vote-front --namespace production --cpu-percent=50 --min=1 --max=10
+#az aks get-credentials --resource-group $RGName --name $AKSCLUSTERNAME
+#kubectl get nodes
+#az acr list --resource-group $RGName --query "[].{acrLoginServer:loginServer}" --output table
+#kubectl create namespace production
+#kubectl apply -f ./yaml/azure-vote.yaml --namespace production
+#kubectl apply -f ./yaml/container-azm-ms-agentconfig.yaml
+#kubectl autoscale deployment azure-vote-front --namespace production --cpu-percent=50 --min=1 --max=10
+
+#Testing Bastion use CTRL-D to exit
+#bID=/subscriptions/a4c81412-9cb9-4d76-aaa7-14f85696678a/resourceGroups/MC_azure-devops-track-aks-exercise-jash_aksclusterjash_uksouth/providers/Microsoft.Compute/virtualMachineScaleSets/aks-apppool-46039142-vmss/virtualMachines/0
+#az network bastion ssh --name bastion-jash-${LOCATION}-001 --resource-group $RGName --target-resource-id $bID --auth-type ssh-key --username $userName --ssh-key ./keys/keys

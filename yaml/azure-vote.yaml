@@ -69,17 +69,6 @@ spec:
         - name: REDIS
           value: "azure-vote-back"
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: azure-vote-front
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-  selector:
-    app: azure-vote-front
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
