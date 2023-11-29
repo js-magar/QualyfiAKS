@@ -9,7 +9,8 @@ RGName="azure-devops-track-aks-exercise-$Name"
 AcrName="aksacr$Name"
 AksClusterName="akscluster$Name"
 Location="uksouth"
-KVName="kv-$Name-$Location-1"
+KVName="kv-$Name-$Location"
+BastionName="bas-$Name-$Location-001"
 #RoleDefinitons
 ID=$(az ad group list --display-name 'AKS EID Admin Group' --query "[].{id:id}" --output tsv)
 AcrPullRoleDefiniton=$(az role definition list --name 'AcrPull' --query "[].{name:name}" --output tsv)
@@ -22,8 +23,8 @@ az group create --name $RGName --location $Location
 az deployment group create --resource-group $RGName --template-file ./bicep/main.bicep \
  --parameters entraGroupID=$ID acrRoleDefName=$AcrPullRoleDefiniton readerRoleDefName=$ReaderRoleDefiniton \
  contributorRoleDefName=$ContributorRoleDefiniton netContributorRoleDefName=$NetworkContribnutorRoleDefiniton \
- keyVaultName=$KeyVaultAdminRoleDefiniton adminUsername=$UserName adminPasOrKey=$SSHKey aksClusterName=$AksClusterName \
- acrName=$AcrName location=$Location name=$Name
+ keyVaultName=$KVName adminUsername=$UserName adminPasOrKey=$SSHKey aksClusterName=$AksClusterName \
+ acrName=$AcrName bastionName=$BastionName location=$Location name=$Name
 
 #az aks install-cli
 # Clone app
@@ -33,11 +34,11 @@ az deployment group create --resource-group $RGName --template-file ./bicep/main
 #docker compose down
 
 sleep 5 
-az acr show -n $ACRNAME  
+az acr show -n $AcrName  
 az acr list -o table 
-az acr login --name 'aksacrjash'
-az acr build --registry $ACRNAME --image mcr.microsoft.com/azuredocs/azure-vote-front:v1 ./azure-voting-app-redis/azure-vote
-az acr build --registry $ACRNAME --image mcr.microsoft.com/oss/bitnami/redis ./azure-voting-app-redis/azure-vote
+az acr login --name $AcrName
+az acr build --registry $AcrName --image mcr.microsoft.com/azuredocs/azure-vote-front:v1 ./azure-voting-app-redis/azure-vote
+az acr build --registry $AcrName --image mcr.microsoft.com/oss/bitnami/redis ./azure-voting-app-redis/azure-vote
 
 
 VALUE=demovalue
@@ -59,8 +60,8 @@ kubectl create namespace production
 envsubst < yaml/azure-vote.yaml | kubectl apply -f - --namespace production
 kubectl apply -f ./yaml/container-azm-ms-agentconfig.yaml
 kubectl autoscale deployment azure-vote-front --namespace production --cpu-percent=50 --min=1 --max=10
+sleep 10 
+
 kubectl get pods --namespace production
 
-#Testing Bastion use CTRL-D to exit
-#bID=/subscriptions/a4c81412-9cb9-4d76-aaa7-14f85696678a/resourceGroups/MC_azure-devops-track-aks-exercise-jash_aksclusterjash_uksouth/providers/Microsoft.Compute/virtualMachineScaleSets/aks-apppool-46039142-vmss/virtualMachines/0
-#az network bastion ssh --name bastion-jash-${Location}-001 --resource-group $RGName --target-resource-id $bID --auth-type ssh-key --username $userName --ssh-key ./keys/keys
+./tests/test3.sh $RGName $BastionName $UserName

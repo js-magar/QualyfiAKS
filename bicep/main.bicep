@@ -30,10 +30,10 @@ var appGatewayName = 'agw-${name}-${location}-001'
 var appGatewayPIPName = 'pip-${appGatewayName}'
 
 var bastionSubnetAddressPrefix = '2'
-var bastionName = 'bas-jash-${location}-001'
+param bastionName string
 var bastionSubnetName = 'AzureBastionSubnet'
 
-var natGatewayName = 'ng${aksClusterName}'
+var natGatewayName = 'ng-${name}-${location}-001'
 var natGatewayPIPPrefixName = 'ippre-${natGatewayName}'
 
 var logAnalyticsWorkspaceName = 'log-acr-${name}-${location}-1'
@@ -183,6 +183,7 @@ module metrics 'modules/monitor_metrics.bicep' = {
     location:location
     clusterName:aksClusterName
     groupId:entraGroupID
+    name:name
   }
   dependsOn:[
     acr
@@ -190,7 +191,7 @@ module metrics 'modules/monitor_metrics.bicep' = {
     appGateway
   ]
 }
-/*
+
 module bastion 'modules/bastion.bicep' = {
   name: 'bastionDeployment'
   params:{
@@ -199,13 +200,14 @@ module bastion 'modules/bastion.bicep' = {
     bastionSubnetName:bastionSubnetName
     bastionName:bastionName
   }
+  /*
   dependsOn:[
     acr
     aksCluster
     appGateway
-  ]
+  ]*/
 }
-*/
+
 module managedIdentities 'modules/managedIdentity.bicep' = {
   name: 'managedIdentitiesDeployment'
   params:{

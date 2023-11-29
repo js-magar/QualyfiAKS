@@ -16,6 +16,7 @@ param aksClusterDnsServiceIP string = '10.5.0.10'
 
 var aksClusterUserDefinedManagedIdentityName = 'mi-${aksClusterName}-${location}'
 var aksClusterDNSPrefix ='akscluster-jash'
+var rgName = resourceGroup().name
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {name: vnetName}
 resource AppPoolSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existing = {name: appSubnetName,parent: virtualNetwork}
@@ -34,7 +35,11 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
       tier: 'Free'
   }
   identity: {
-      type: 'SystemAssigned'
+      type: 'UserAssigned'
+      userAssignedIdentities: {
+        '${aksClusterUserDefinedManagedIdentity.id}': {
+        }
+      }
   }
   properties: {
     kubernetesVersion: '1.26.6' 
@@ -95,6 +100,7 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
       serviceCidr: aksClusterServiceCidr
       dnsServiceIP: aksClusterDnsServiceIP
     }
+    nodeResourceGroup:'MC-${rgName}'
     addonProfiles: {
       omsagent: {
         enabled: true

@@ -3,22 +3,22 @@ param location string = resourceGroup().location
 param clusterName string
 param tags object ={tag:'tag'}
 param groupId string
+param name string
 
-var kubernetesRecordingRuleGrouPrefix = 'KubernetesRecordingRulesRuleGroup-'
-var kubernetesRecordingRuleGroupName = '${kubernetesRecordingRuleGrouPrefix}${clusterName}'
+var kubernetesRecordingRuleGroupName = 'rg-prometheus-${clusterName}'
 var kubernetesRecordingRuleGroupDescription = 'Kubernetes Recording Rules RuleGroup'
 var version = ' - 1'
 
 // Resources
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-06-02-preview' existing = {name: clusterName}
 resource azureMonitorWorkspace 'Microsoft.Monitor/accounts@2023-04-03' = {
-  name: 'jashAzureMonitorWorkspace'
+  name: 'mw-${name}-${location}'
   location: location
   tags: tags
 }
 //Prometheus
 resource dataCollectionEndpoint 'Microsoft.Insights/dataCollectionEndpoints@2022-06-01' = {
-  name: 'prometheus-dce-${location}-${clusterName}'
+  name: 'dce-${name}-${location}-${clusterName}'
   location: location
   kind: 'Linux'
   tags: tags
@@ -29,7 +29,7 @@ resource dataCollectionEndpoint 'Microsoft.Insights/dataCollectionEndpoints@2022
   }
 }
 resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' = {
-  name: 'prometheus-dcr-${location}-${clusterName}'
+  name: 'dcr-${name}-${location}-${clusterName}'
   location: location
   tags: tags
 
@@ -67,7 +67,7 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' 
   }
 }
 resource dataCollectionRuleAssociation 'Microsoft.Insights/dataCollectionRuleAssociations@2022-06-01' = {
-  name: 'prometheus-dcra-${location}-${clusterName}'
+  name: 'dcra-${name}-${location}-${clusterName}'
   scope: aksCluster
   properties: {
     dataCollectionRuleId: dataCollectionRule.id
@@ -143,7 +143,7 @@ resource kubernetesRecordingRuleGroup 'Microsoft.AlertsManagement/prometheusRule
 }
 //Grafana
 resource managedGrafana 'Microsoft.Dashboard/grafana@2022-08-01' =  {
-  name: 'jashManagedGrafana'
+  name: 'amg-${name}-${location}'
   location: location
   tags: tags
   sku: {
