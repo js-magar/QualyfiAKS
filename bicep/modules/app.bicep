@@ -4,14 +4,14 @@ param appGatewayName string
 param virtualNetworkName string
 
 param location string
-var applicationGatewayUserDefinedManagedIdentityName = 'id-appgw-${location}-001'
+var applicationGatewayUserDefinedManagedIdentityName = 'mi-${appGatewayName}'
 var applicationGatewayUserDefinedManagedIdentityId = applicationGatewayUserDefinedManagedIdentity.id
 var appGWFIPConfigName = 'appGatewayFrontendConfig'
 var appGWFPortName = 'frontendHttpPort80'
 var appGWhttpListenerName='appGWHttpListener'
 var appGWBAddressPoolName='backendAddressPool'
 var appGWBHttpSettingsName = 'backendHttpPort80'
-var wafPolicyName = '${appGatewayName}-WafPolicy'
+var wafPolicyName = 'waf-${appGatewayName}'
 var wafPolicyFileUploadLimitInMb = 100
 var wafPolicyMaxRequestBodySizeInKb = 128
 var wafPolicyRequestBodyCheck = true

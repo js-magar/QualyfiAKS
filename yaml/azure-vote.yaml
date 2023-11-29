@@ -1,3 +1,21 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: $secretProviderClassName
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: "$clientId"
+    keyvaultName: "$KVName"
+    objects: |
+      array:
+        - |
+          objectName: "$secretName"
+          objectType: secret
+    tenantId: "$tenantId"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,6 +41,17 @@ spec:
         ports:
         - containerPort: 6379
           name: redis
+        volumeMounts:
+        - name: secrets-store-back
+          mountPath: "./secrets-store-back"
+          readOnly: true
+      volumes:
+      - name: secrets-store-back
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "$secretProviderClassName"
 ---
 apiVersion: v1
 kind: Service
@@ -68,13 +97,22 @@ spec:
         env:
         - name: REDIS
           value: "azure-vote-back"
+        volumeMounts:
+        - name: secrets-store-front
+          mountPath: "app/secrets-store-front"
+          readOnly: true
+      volumes:
+      - name: secrets-store-front
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "$secretProviderClassName"
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: azure-vote-front
-  # annotations:
-  #   kubernetes.io/ingress.class: azure/application-gateway
 spec:
   ingressClassName: azure-application-gateway
   rules:
@@ -87,3 +125,27 @@ spec:
             port:
               number: 80
         pathType: Exact
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: busybox-secrets-store-inline-user-msi
+spec:
+  containers:
+    - name: busybox
+      image: registry.k8s.io/e2e-test-images/busybox:1.29-4
+      command:
+        - "/bin/sleep"
+        - "10000"
+      volumeMounts:
+      - name: secrets-store
+        mountPath: "mnt/secrets-store"
+        readOnly: true
+  volumes:
+    - name: secrets-store
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "$secretProviderClassName"
+          

@@ -4,16 +4,15 @@ param acrPullRDName string
 param contributorRoleDefName string
 param readerRoleDefName string
 param netContributorRoleDefName string
-//param readerRoleDefName string
 param aksClusterUserDefinedManagedIdentityName string
 param applicationGatewayUserDefinedManagedIdentityName string
-param podManagedIdentityName string
+param kvManagedIdentityName string
 param aksClusterName string
 
 var aksContributorRoleAssignmentName = guid(aksClusterUserDefinedManagedIdentity.id, contributorRoleId, resourceGroup().id)
 var appGwContributorRoleAssignmentName = guid(applicationGatewayUserDefinedManagedIdentity.id, contributorRoleId, resourceGroup().id)
 var appGwNetContributorRoleAssignmentName = guid(applicationGatewayUserDefinedManagedIdentity.id, netContributorRoleId, resourceGroup().id)
-var keyVaultReaderRoleAssignmentName = guid(podUserDefinedManagedIdentity.id, readerRoleId, resourceGroup().id)
+var keyVaultReaderRoleAssignmentName = guid(kvUserDefinedManagedIdentity.id, readerRoleId, resourceGroup().id)
 
 var acrPullRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRDName)
 var contributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', contributorRoleDefName)
@@ -24,7 +23,7 @@ var acrPullRoleAssignmentName = guid('${resourceGroup().id}acrPullRoleAssignment
 
 resource applicationGatewayUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing  = {name: applicationGatewayUserDefinedManagedIdentityName}
 resource aksClusterUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {name: aksClusterUserDefinedManagedIdentityName}
-resource podUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing  = {name: podManagedIdentityName}
+resource kvUserDefinedManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing  = {name: kvManagedIdentityName}
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {name: keyVaultName}
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-08-01' existing = {name:aksClusterName}
 
@@ -65,15 +64,15 @@ resource keyVaultReaderRoleAssignment  'Microsoft.Authorization/roleAssignments@
   name: keyVaultReaderRoleAssignmentName
   properties: {
     roleDefinitionId: readerRoleId
-    principalId: podUserDefinedManagedIdentity.properties.principalId
+    principalId: kvUserDefinedManagedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }
 resource keyVaultAdminRoleAssignment  'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid(podUserDefinedManagedIdentity.id, keyVaultSecretsAdminRole.id, resourceGroup().id)
+  name: guid(kvUserDefinedManagedIdentity.id, keyVaultSecretsAdminRole.id, resourceGroup().id)
   properties: {
     roleDefinitionId: keyVaultSecretsAdminRole.id
-    principalId: podUserDefinedManagedIdentity.properties.principalId
+    principalId: kvUserDefinedManagedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }

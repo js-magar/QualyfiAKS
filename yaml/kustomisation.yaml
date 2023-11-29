@@ -1,6 +1,0 @@
-secretGenerator:
-- name: db-credentials
-  literals:
-  - username=user
-  - password=54f41d12e8fa
-  

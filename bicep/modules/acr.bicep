@@ -40,7 +40,7 @@ resource acrResource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
 }
 resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
     scope: acrResource
-    name: 'default'
+    name: 'diagnostics'
     properties: {
       workspaceId: logAnalyticsWorkspace.id
       metrics: [
@@ -62,18 +62,3 @@ resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-previe
     ]
   }
 }
-
-/*
-resource keyVaultName_Microsoft_Authorization_id_readerRoleId 'Microsoft.KeyVault/vaults/providers/roleAssignments@2020-04-01-preview' = {
-  name: '${keyVaultName}/Microsoft.Authorization/${guid(concat(resourceGroup().id), readerRoleId)}'
-  properties: {
-    roleDefinitionId: readerRoleId
-    principalId: reference(aadPodIdentityUserDefinedManagedIdentityId).principalId
-    principalType: 'ServicePrincipal'
-  }
-  dependsOn: [
-    keyVaultId
-    aadPodIdentityUserDefinedManagedIdentityId
-  ]
-}
-*/

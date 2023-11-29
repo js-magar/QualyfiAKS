@@ -8,11 +8,11 @@ param adminPasOrKey string
 param aksClusterName string
 param acrName string
 param location string
-
-var name = 'jash'
+param keyVaultName string
+param name string
 
 var vnetAddressPrefix = '10'
-var virtualNetworkName = 'virtualNetwork'
+var virtualNetworkName = '${name}VirtualNetwork'
 
 var systemPoolSubnetName = 'SystemPoolSubnet'
 var systemPoolSubnetAddressPrefix = '1'
@@ -26,21 +26,22 @@ var podSubnetName = 'PodSubnet'
 var appgwbastionPrefix ='4'
 var appGatewaySubnetAddressPrefix = '1'
 var appGatewaySubnetName = 'AppgwSubnet'
-var appGatewayPIPName = 'pip-appGateway-jash-${location}-001'
-var appGatewayName = 'appGateway-jash-${location}-001'
+var appGatewayName = 'agw-${name}-${location}-001'
+var appGatewayPIPName = 'pip-${appGatewayName}'
 
 var bastionSubnetAddressPrefix = '2'
-var bastionName = 'bastion-jash-${location}-001'
+var bastionName = 'bas-jash-${location}-001'
 var bastionSubnetName = 'AzureBastionSubnet'
 
-var natGatewayName = '${aksClusterName}NatGateway'
-var natGatewayPIPPrefixName = '${aksClusterName}PIPPrefix'
+var natGatewayName = 'ng${aksClusterName}'
+var natGatewayPIPPrefixName = 'ippre-${natGatewayName}'
 
-var keyVaultName = 'kv-${name}-${location}-1'
+var logAnalyticsWorkspaceName = 'log-acr-${name}-${location}-1'
+
 
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
-  name:'LAWAcrResource'
+  name:logAnalyticsWorkspaceName
   location:location
   properties:{
     features:{
@@ -217,7 +218,7 @@ module managedIdentities 'modules/managedIdentity.bicep' = {
     applicationGatewayUserDefinedManagedIdentityName:appGateway.outputs.appGatwayUDMName
     aksClusterName:aksClusterName
     keyVaultName:keyVaultName
-    podManagedIdentityName:keyVault.outputs.podIdentityUserDefinedManagedIdentityName
+    kvManagedIdentityName:keyVault.outputs.kvIdentityUserDefinedManagedIdentityName
   }
   dependsOn:[
     acr
@@ -228,6 +229,5 @@ module keyVault 'modules/keyVault.bicep' = {
   params:{
     location:location
     keyVaultName:keyVaultName
-    applicationGatewayManagedIdentityName:appGateway.outputs.appGatwayUDMName
   }
 }

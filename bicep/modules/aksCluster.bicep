@@ -10,10 +10,12 @@ param adminUsername string
 param adminPasOrKey string
 
 param location string
-var aksClusterUserDefinedManagedIdentityName = 'id-aksCluster-${location}-001'
 param aksClusterPodCidr string = '10.244.0.0/16'
 param aksClusterServiceCidr string = '10.5.0.0/16'
 param aksClusterDnsServiceIP string = '10.5.0.10'
+
+var aksClusterUserDefinedManagedIdentityName = 'mi-${aksClusterName}-${location}'
+var aksClusterDNSPrefix ='akscluster-jash'
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {name: vnetName}
 resource AppPoolSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' existing = {name: appSubnetName,parent: virtualNetwork}
@@ -37,7 +39,7 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
   properties: {
     kubernetesVersion: '1.26.6' 
     enableRBAC: true
-    dnsPrefix: 'akscluster-jash'
+    dnsPrefix: aksClusterDNSPrefix
     disableLocalAccounts:true
     aadProfile:{
         managed:true
