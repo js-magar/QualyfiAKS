@@ -16,7 +16,7 @@ var wafPolicyFileUploadLimitInMb = 100
 var wafPolicyMaxRequestBodySizeInKb = 128
 var wafPolicyRequestBodyCheck = true
 var wafPolicyRuleSetType = 'OWASP'
-var wafPolicyRuleSetVersion = '3.1'
+var wafPolicyRuleSetVersion = '3.2'
 
 
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {
@@ -41,58 +41,12 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
   name: wafPolicyName
   location: location
   properties: {
-    customRules: [
-      {
-        name: 'BlockMe'
-        priority: 1
-        ruleType: 'MatchRule'
-        action: 'Block'
-        matchConditions: [
-          {
-            matchVariables: [
-              {
-                variableName: 'QueryString'
-              }
-            ]
-            operator: 'Contains'
-            negationConditon: false
-            matchValues: [
-              'blockme'
-            ]
-          }
-        ]
-      }
-      {
-        name: 'BlockEvilBot'
-        priority: 2
-        ruleType: 'MatchRule'
-        action: 'Block'
-        matchConditions: [
-          {
-            matchVariables: [
-              {
-                variableName: 'RequestHeaders'
-                selector: 'User-Agent'
-              }
-            ]
-            operator: 'Contains'
-            negationConditon: false
-            matchValues: [
-              'evilbot'
-            ]
-            transforms: [
-              'Lowercase'
-            ]
-          }
-        ]
-      }
-    ]
     policySettings: {
       requestBodyCheck: wafPolicyRequestBodyCheck
       maxRequestBodySizeInKb: wafPolicyMaxRequestBodySizeInKb
       fileUploadLimitInMb: wafPolicyFileUploadLimitInMb
-      mode: 'Prevention'
       state: 'Enabled'
+      mode: 'Detection'
     }
     managedRules: {
       managedRuleSets: [

@@ -3,6 +3,11 @@ param acrRoleDefName string
 param contributorRoleDefName string
 param readerRoleDefName string
 param netContributorRoleDefName string
+param keyVaultAdminRoleDefName string
+param keyVaultUserRoleDefName string
+param monitoringReaderRoleDefName string
+param monitoringDataReaderRoleDefName string
+param grafanaAdminRoleDefName string
 param adminUsername string
 param adminPasOrKey string
 param aksClusterName string
@@ -26,7 +31,7 @@ var podSubnetName = 'PodSubnet'
 var appgwbastionPrefix ='4'
 var appGatewaySubnetAddressPrefix = '1'
 var appGatewaySubnetName = 'AppgwSubnet'
-var appGatewayName = 'agw-${name}-${location}-001'
+param appGatewayName string
 var appGatewayPIPName = 'pip-${appGatewayName}'
 
 var bastionSubnetAddressPrefix = '2'
@@ -182,7 +187,6 @@ module metrics 'modules/monitor_metrics.bicep' = {
   params:{
     location:location
     clusterName:aksClusterName
-    groupId:entraGroupID
     name:name
   }
   dependsOn:[
@@ -191,7 +195,6 @@ module metrics 'modules/monitor_metrics.bicep' = {
     appGateway
   ]
 }
-
 module bastion 'modules/bastion.bicep' = {
   name: 'bastionDeployment'
   params:{
@@ -207,7 +210,6 @@ module bastion 'modules/bastion.bicep' = {
     appGateway
   ]*/
 }
-
 module managedIdentities 'modules/managedIdentity.bicep' = {
   name: 'managedIdentitiesDeployment'
   params:{
@@ -221,9 +223,18 @@ module managedIdentities 'modules/managedIdentity.bicep' = {
     aksClusterName:aksClusterName
     keyVaultName:keyVaultName
     kvManagedIdentityName:keyVault.outputs.kvIdentityUserDefinedManagedIdentityName
+    keyVaultUserRoleDefName:keyVaultUserRoleDefName
+    keyVaultAdminRoleDefName:keyVaultAdminRoleDefName
+    grafanaName:metrics.outputs.grafanaName
+    groupId:entraGroupID
+    prometheusName:metrics.outputs.name
+    monitoringReaderRoleDefName:monitoringReaderRoleDefName
+    monitoringDataReaderRoleDefName:monitoringDataReaderRoleDefName
+    grafanaAdminRoleDefName:grafanaAdminRoleDefName
   }
   dependsOn:[
     acr
+    metrics
   ]
 }
 module keyVault 'modules/keyVault.bicep' = {

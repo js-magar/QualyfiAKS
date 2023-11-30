@@ -35,14 +35,16 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
       tier: 'Free'
   }
   identity: {
+    /*
       type: 'UserAssigned'
       userAssignedIdentities: {
         '${aksClusterUserDefinedManagedIdentity.id}': {
         }
-      }
+      }*/
+      type:'SystemAssigned'
   }
   properties: {
-    kubernetesVersion: '1.26.6' 
+    kubernetesVersion: '1.27.7' 
     enableRBAC: true
     dnsPrefix: aksClusterDNSPrefix
     disableLocalAccounts:true
@@ -55,11 +57,11 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
     }
     agentPoolProfiles: [
         {name: 'systempool'
-          count: 1
+          count: 2
           vmSize: 'Standard_DS2_v2' 
           vnetSubnetID:SystemPoolSubnet.id
           podSubnetID:PodSubnet.id
-          maxPods:30
+          maxPods:250
           maxCount:20
           minCount:1
           enableAutoScaling:true
@@ -69,11 +71,11 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
 
         }
         {name: 'apppool'
-          count: 1
+          count: 2
           vmSize: 'Standard_DS2_v2' 
           vnetSubnetID:AppPoolSubnet.id
           podSubnetID:PodSubnet.id
-          maxPods:30
+          maxPods:250
           maxCount:20
           minCount:1
           enableAutoScaling:true
@@ -93,12 +95,12 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
         }
     }
     networkProfile: {
-      outboundType: 'userAssignedNATGateway'
+      //outboundType: 'userAssignedNATGateway'
       networkPlugin:'azure'
       networkPolicy: 'azure'
-      podCidr: aksClusterPodCidr
-      serviceCidr: aksClusterServiceCidr
-      dnsServiceIP: aksClusterDnsServiceIP
+      networkDataplane:'azure'
+      //serviceCidr: aksClusterServiceCidr
+      //dnsServiceIP: aksClusterDnsServiceIP
     }
     nodeResourceGroup:'MC-${rgName}'
     addonProfiles: {
@@ -107,7 +109,7 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
         config: {
           logAnalyticsWorkspaceResourceID: logAnalyticsWorkspaceID
         }
-      }
+      }/*
       aciConnectorLinux: {
         enabled: false
       }
@@ -119,7 +121,7 @@ resource aksClusterResource 'Microsoft.ContainerService/managedClusters@2023-08-
       }
       kubeDashboard: {
         enabled: false
-      }
+      }*/
       ingressApplicationGateway: {
         config: {
           applicationGatewayId: appGatewayID

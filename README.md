@@ -8,7 +8,7 @@ az login
 ```
 Once connected please run the following code to deploy the template:
 ```
-.\deploy.sh
+./deploy.sh
 ```
 Spec/Requirements:
 Using Azure CLI and Bicep deploy the following:
@@ -29,7 +29,7 @@ Using Azure CLI and Bicep deploy the following:
 - [x] 14. Use an Application Gateway for ingress traffic
 - [x] 15. Use a NAT gateway for internet egress traffic
 - [x] 16. Use a system assigned managed identity for the cluster
-- [ ] 17. Use the Azure Key Vault provider to secure Kubernetes secrets in AKS, create an example secret and attach it to the backend pods
+- [x] 17. Use the Azure Key Vault provider to secure Kubernetes secrets in AKS, create an example secret and attach it to the backend pods
 - [x] 18. Use a ‘standard’ sku Bastion and public/private keys to SSH to the pods
 - [x] 19. Enable IP subnet usage monitoring for the cluster
 - [x] 20. Enable Container Insights for the cluster
@@ -43,12 +43,12 @@ Success Criteria:
 ```
 ./tests/test3.sh [ResourceGroupName] [BastionName] [UserName]
 ```
-- [ ] 4. From the node load a web page via the NAT Gateway
-- [ ] 5. Check cluster autoscaler logs for correct function of the cluster
-- [ ] 6. Confirm the Pod autoscaler is running  (bastion then vmss)
-- [ ] 7. Connect to a pod using kubectl bash command
-- [ ] 8. Display the value of the example secret in the pod bash shell
-- [ ] 9. Check Container Insights is running, via the portal
-- [ ] 10. Check Container Insights is running, via the portal
-- [ ] 11. Use Azure Loading Testing to load the AKS cluster resulting in autoscaling of the nodes and pods
+- [x] 4. From the node load a web page via the NAT Gateway
+- [x] 5. Check cluster autoscaler logs for correct function of the cluster
+- [x] 6. Confirm the Pod autoscaler is running  (bastion then vmss)
+- [x] 7. Connect to a pod using kubectl bash command
+- [x] 8. Display the value of the example secret in the pod bash shell
+- [x] 9. Check Container Insights is running, via the portal
+- [ ] 10. Check Prometheus Monitor Metrics in Grafana instance
+- [x] 11. Use Azure Loading Testing to load the AKS cluster resulting in autoscaling of the nodes and pods
 

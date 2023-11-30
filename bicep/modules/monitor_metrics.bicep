@@ -2,12 +2,13 @@
 param location string = resourceGroup().location
 param clusterName string
 param tags object ={tag:'tag'}
-param groupId string
 param name string
 
-var kubernetesRecordingRuleGroupName = 'rg-prometheus-${clusterName}'
+var kubernetesRecordingRuleGroupName = 'rg-kubernetes-${clusterName}'
 var kubernetesRecordingRuleGroupDescription = 'Kubernetes Recording Rules RuleGroup'
 var version = ' - 1'
+var nodeRecordingRuleGroupName = 'rg-node-${clusterName}'
+var nodeRecordingRuleGroupDescription = 'Node Recording Rules RuleGroup'
 
 // Resources
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-06-02-preview' existing = {name: clusterName}
@@ -24,7 +25,7 @@ resource dataCollectionEndpoint 'Microsoft.Insights/dataCollectionEndpoints@2022
   tags: tags
   properties: {
     networkAcls: {
-      publicNetworkAccess: 'Disabled'
+      publicNetworkAccess: 'Enabled'
     }
   }
 }
@@ -138,6 +139,101 @@ resource kubernetesRecordingRuleGroup 'Microsoft.AlertsManagement/prometheusRule
         record: 'namespace_cpu:kube_pod_container_resource_limits:sum'
         expression: 'sum by (namespace, cluster) (    sum by (namespace, pod, cluster) (        max by (namespace, pod, container, cluster) (          kube_pod_container_resource_limits{resource="cpu",job="kube-state-metrics"}        ) * on(namespace, pod, cluster) group_left() max by (namespace, pod, cluster) (          kube_pod_status_phase{phase=~"Pending|Running"} == 1        )    ))'
       }
+      {
+        record: 'namespace_workload_pod:kube_pod_owner:relabel'
+        expression: 'max by (cluster, namespace, workload, pod) (  label_replace(    label_replace(      kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"},      "replicaset", "$1", "owner_name", "(.*)"    ) * on(replicaset, namespace) group_left(owner_name) topk by(replicaset, namespace) (      1, max by (replicaset, namespace, owner_name) (        kube_replicaset_owner{job="kube-state-metrics"}      )    ),    "workload", "$1", "owner_name", "(.*)"  ))'
+        labels: {
+          workload_type: 'deployment'
+        }
+      }
+      {
+        record: 'namespace_workload_pod:kube_pod_owner:relabel'
+        expression: 'max by (cluster, namespace, workload, pod) (  label_replace(    kube_pod_owner{job="kube-state-metrics", owner_kind="DaemonSet"},    "workload", "$1", "owner_name", "(.*)"  ))'
+        labels: {
+          workload_type: 'daemonset'
+        }
+      }
+      {
+        record: 'namespace_workload_pod:kube_pod_owner:relabel'
+        expression: 'max by (cluster, namespace, workload, pod) (  label_replace(    kube_pod_owner{job="kube-state-metrics", owner_kind="StatefulSet"},    "workload", "$1", "owner_name", "(.*)"  ))'
+        labels: {
+          workload_type: 'statefulset'
+        }
+      }
+      {
+        record: 'namespace_workload_pod:kube_pod_owner:relabel'
+        expression: 'max by (cluster, namespace, workload, pod) (  label_replace(    kube_pod_owner{job="kube-state-metrics", owner_kind="Job"},    "workload", "$1", "owner_name", "(.*)"  ))'
+        labels: {
+          workload_type: 'job'
+        }
+      }
+      {
+        record: ':node_memory_MemAvailable_bytes:sum'
+        expression: 'sum(  node_memory_MemAvailable_bytes{job="node"} or  (    node_memory_Buffers_bytes{job="node"} +    node_memory_Cached_bytes{job="node"} +    node_memory_MemFree_bytes{job="node"} +    node_memory_Slab_bytes{job="node"}  )) by (cluster)'
+      }
+      {
+        record: 'cluster:node_cpu:ratio_rate5m'
+        expression: 'sum(rate(node_cpu_seconds_total{job="node",mode!="idle",mode!="iowait",mode!="steal"}[5m])) by (cluster) /count(sum(node_cpu_seconds_total{job="node"}) by (cluster, instance, cpu)) by (cluster)'
+      }
+    ]
+  }
+}
+resource nodeRecordingRuleGroup 'Microsoft.AlertsManagement/prometheusRuleGroups@2023-03-01' = {
+  name: nodeRecordingRuleGroupName
+  location: location
+  properties: {
+    description: '${nodeRecordingRuleGroupDescription}${version}'
+    scopes: [
+      azureMonitorWorkspace.id
+    ]
+    enabled: true
+    clusterName: clusterName
+    interval: 'PT1M'
+    rules: [
+      {
+        record: 'instance:node_num_cpu:sum'
+        expression: 'count without (cpu, mode) (  node_cpu_seconds_total{job="node",mode="idle"})'
+      }
+      {
+        record: 'instance:node_cpu_utilisation:rate5m'
+        expression: '1 - avg without (cpu) (  sum without (mode) (rate(node_cpu_seconds_total{job="node", mode=~"idle|iowait|steal"}[5m])))'
+      }
+      {
+        record: 'instance:node_load1_per_cpu:ratio'
+        expression: '(  node_load1{job="node"}/  instance:node_num_cpu:sum{job="node"})'
+      }
+      {
+        record: 'instance:node_memory_utilisation:ratio'
+        expression: '1 - (  (    node_memory_MemAvailable_bytes{job="node"}    or    (      node_memory_Buffers_bytes{job="node"}      +      node_memory_Cached_bytes{job="node"}      +      node_memory_MemFree_bytes{job="node"}      +      node_memory_Slab_bytes{job="node"}    )  )/  node_memory_MemTotal_bytes{job="node"})'
+      }
+      {
+        record: 'instance:node_vmstat_pgmajfault:rate5m'
+        expression: 'rate(node_vmstat_pgmajfault{job="node"}[5m])'
+      }
+      {
+        record: 'instance_device:node_disk_io_time_seconds:rate5m'
+        expression: 'rate(node_disk_io_time_seconds_total{job="node", device!=""}[5m])'
+      }
+      {
+        record: 'instance_device:node_disk_io_time_weighted_seconds:rate5m'
+        expression: 'rate(node_disk_io_time_weighted_seconds_total{job="node", device!=""}[5m])'
+      }
+      {
+        record: 'instance:node_network_receive_bytes_excluding_lo:rate5m'
+        expression: 'sum without (device) (  rate(node_network_receive_bytes_total{job="node", device!="lo"}[5m]))'
+      }
+      {
+        record: 'instance:node_network_transmit_bytes_excluding_lo:rate5m'
+        expression: 'sum without (device) (  rate(node_network_transmit_bytes_total{job="node", device!="lo"}[5m]))'
+      }
+      {
+        record: 'instance:node_network_receive_drop_excluding_lo:rate5m'
+        expression: 'sum without (device) (  rate(node_network_receive_drop_total{job="node", device!="lo"}[5m]))'
+      }
+      {
+        record: 'instance:node_network_transmit_drop_excluding_lo:rate5m'
+        expression: 'sum without (device) (  rate(node_network_transmit_drop_total{job="node", device!="lo"}[5m]))'
+      }
     ]
   }
 }
@@ -161,55 +257,10 @@ resource managedGrafana 'Microsoft.Dashboard/grafana@2022-08-01' =  {
         azureMonitorWorkspaceResourceId: azureMonitorWorkspace.id
       }]
     }
-    publicNetworkAccess: 'Disabled'
+    publicNetworkAccess: 'Enabled'
     zoneRedundancy: 'Disabled'
   }
 }
-
-resource mmonitoringReaderRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  name: '43d0d8ad-25c7-4714-9337-8ba259a9fe05'
-  scope: subscription()
-}
-
-resource monitoringDataReaderRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  name: 'b0d8363b-8ddd-447d-831f-62ca05bff136'
-  scope: subscription()
-}
-
-resource grafanaAdminRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  name: '22926164-76b3-42b3-bc55-97df8dab3e41'
-  scope: subscription()
-}
-
-resource monitoringReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name:  guid(managedGrafana.name, azureMonitorWorkspace.name, mmonitoringReaderRole.id)
-  scope: azureMonitorWorkspace
-  properties: {
-    roleDefinitionId: mmonitoringReaderRole.id
-    principalId: managedGrafana.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource monitoringDataReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name:  guid(managedGrafana.name, azureMonitorWorkspace.name, monitoringDataReaderRole.id)
-  scope: azureMonitorWorkspace
-  properties: {
-    roleDefinitionId: monitoringDataReaderRole.id
-    principalId: managedGrafana.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource grafanaAdminRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name:  guid(managedGrafana.name, groupId, grafanaAdminRole.id)
-  scope: managedGrafana
-  properties: {
-    roleDefinitionId: grafanaAdminRole.id
-    principalId: groupId
-    principalType: 'Group'
-  }
-}
-
 output id string = azureMonitorWorkspace.id
 output name string = azureMonitorWorkspace.name
+output grafanaName string = managedGrafana.name
