@@ -10,9 +10,10 @@ param adminUsername string
 param adminPasOrKey string
 
 param location string
-param aksClusterPodCidr string = '10.244.0.0/16'
-param aksClusterServiceCidr string = '10.5.0.0/16'
-param aksClusterDnsServiceIP string = '10.5.0.10'
+var maxPods = 250
+var maxCount=20
+var minCount=1
+var startingCount=1
 
 var aksClusterUserDefinedManagedIdentityName = 'mi-${aksClusterName}-${location}'
 var aksClusterDNSPrefix ='akscluster-jash'

@@ -47,8 +47,14 @@ Success Criteria:
 - [x] 5. Check cluster autoscaler logs for correct function of the cluster
 - [x] 6. Confirm the Pod autoscaler is running  (bastion then vmss)
 - [x] 7. Connect to a pod using kubectl bash command
+```
+./tests/test7.sh 
+```
 - [x] 8. Display the value of the example secret in the pod bash shell
+```
+./tests/test8.sh 
+```
 - [x] 9. Check Container Insights is running, via the portal
-- [ ] 10. Check Prometheus Monitor Metrics in Grafana instance
+- [x] 10. Check Prometheus Monitor Metrics in Grafana instance
 - [x] 11. Use Azure Loading Testing to load the AKS cluster resulting in autoscaling of the nodes and pods
 
